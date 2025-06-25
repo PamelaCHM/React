@@ -1,11 +1,11 @@
 import React from 'react';
-import ProductoCrud from './components/producto';// Importa el componente ProductoCrud desde el archivo producto.js
+import ExplicacionReact from './components/ExplicacionReact';
 
 function App() {
   return (
-    <div className="App">
-      <h1>Aplicación de Ventas</h1>
-      <ProductoCrud />
+    <div>
+      <h1>Mi parte del proyecto</h1>
+      <ExplicacionReact nombre="Paula" />
     </div>
   );
 }

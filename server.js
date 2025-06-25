@@ -14,7 +14,7 @@ app.use(bodyParser.json());
 const dbConfig = {
     user: 'sa',//el usuario con elñ que se inicia session en la BD
     password: 'sa',//La contraseña del usuario
-    server: 'localhost', //el no,bre del servidor de la BD
+    server: 'PAULA_M\SQLEXPRESS', //el no,bre del servidor de la BD
     database: 'VentasDB',
     options: {
         encrypt: false, // true si usas Azure
