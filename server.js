@@ -17,7 +17,7 @@ const dbConfig = {
   database: 'VentasDB',
   options: {
     encrypt: false,
-    trustServerCertificate: true
+    trustServerCertificate: true,
   }
 };
 
@@ -84,6 +84,73 @@ app.delete('/productos/:id', async (req, res) => {
   }
 });
 
+//*********************************************************************/
+
+// Obtener todos los clientes
+app.get('/clientes', async (req, res) => {
+  try {
+    const pool = await sql.connect(dbConfig);
+    const result = await pool
+      .request()
+      .query('SELECT Id, Nombre FROM Clientes');
+    res.json(result.recordset);
+  } catch (err) {
+    console.error('Error al obtener clientes:', err);
+    res.status(500).send('Error al obtener clientes');
+  }
+});
+
+// Crear una venta
+app.post('/ventas', async (req, res) => {
+  const { productoId, clienteId, cantidad } = req.body;
+  try {
+    const pool = await sql.connect(dbConfig);
+    const tx = new sql.Transaction(pool);
+    await tx.begin();
+
+    // 1) Verificar que el producto existe y hay stock suficiente
+    const prodReq = await tx.request()
+      .input('prodId', sql.Int, productoId)
+      .query('SELECT Stock FROM Productos WHERE Id = @prodId');
+    if (prodReq.recordset.length === 0) {
+      throw new Error('Producto no encontrado');
+    }
+    const stockActual = prodReq.recordset[0].Stock;
+    if (stockActual < cantidad) {
+      throw new Error('Stock insuficiente');
+    }
+
+    // 2) Insertar la venta
+    await tx.request()
+      .input('prodId', sql.Int, productoId)
+      .input('cliId', sql.Int, clienteId)
+      .input('cant', sql.Int, cantidad)
+      .query(`
+        INSERT INTO Ventas (ProductoId, ClienteId, Cantidad)
+        VALUES (@prodId, @cliId, @cant);
+      `);
+
+    // 3) Descontar stock
+    await tx.request()
+      .input('prodId', sql.Int, productoId)
+      .input('cant', sql.Int, cantidad)
+      .query(`
+        UPDATE Productos
+        SET Stock = Stock - @cant
+        WHERE Id = @prodId;
+      `);
+
+    await tx.commit();
+    res.status(201).send('Venta creada correctamente');
+  } catch (err) {
+    if (tx) await tx.rollback();
+    console.error('Error al crear venta:', err.message);
+    res.status(400).send(err.message);
+  }
+});
+
+
+
 // Conexión de prueba
 app.get('/', async (req, res) => {
   try {
@@ -100,3 +167,6 @@ app.get('/', async (req, res) => {
 app.listen(PORT, () => {
   console.log(`Servidor corriendo en http://localhost:${PORT}`);
 });
+
+//*********************************************************************/
+
