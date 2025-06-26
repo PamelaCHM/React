@@ -149,7 +149,60 @@ app.post('/ventas', async (req, res) => {
   }
 });
 
+/*********************************************************************/
+// Obtener todas las ventas con info del producto y cliente
+app.get('/ventas', async (req, res) => {
+  try {
+    const pool = await sql.connect(dbConfig);
+    const result = await pool.request().query(`
+      SELECT v.Id, v.Cantidad, 
+             p.Nombre AS ProductoNombre, 
+             c.Nombre AS ClienteNombre,
+             v.ProductoId, v.ClienteId
+      FROM Ventas v
+      JOIN Productos p ON v.ProductoId = p.Id
+      JOIN Clientes c ON v.ClienteId = c.Id
+    `);
+    res.json(result.recordset);
+  } catch (err) {
+    console.error('Error al obtener ventas:', err);
+    res.status(500).send('Error al obtener ventas');
+  }
+});
 
+// Eliminar una venta
+app.delete('/ventas/:id', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const pool = await sql.connect(dbConfig);
+    await pool.request()
+      .input('id', sql.Int, id)
+      .query('DELETE FROM Ventas WHERE Id = @id');
+    res.send('Venta eliminada');
+  } catch (err) {
+    console.error('Error al eliminar venta:', err);
+    res.status(500).send('Error al eliminar venta');
+  }
+});
+
+// Actualizar una venta
+app.put('/ventas/:id', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { clienteId, productoId, cantidad } = req.body;
+    const pool = await sql.connect(dbConfig);
+    await pool.request()
+      .input('id', sql.Int, id)
+      .input('clienteId', sql.Int, clienteId)
+      .input('productoId', sql.Int, productoId)
+      .input('cantidad', sql.Int, cantidad)
+      .query(`UPDATE Ventas SET ClienteId = @clienteId, ProductoId = @productoId, Cantidad = @cantidad WHERE Id = @id`);
+    res.send('Venta actualizada');
+  } catch (err) {
+    console.error('Error al actualizar venta:', err);
+    res.status(500).send('Error al actualizar venta');
+  }
+});
 
 // Conexión de prueba
 app.get('/', async (req, res) => {

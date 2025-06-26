@@ -9,7 +9,7 @@ function App() {
       <h1>Aplicación de Ventas</h1>
       <ProductoCrud />
       <hr />
-      <VentaForm />                                 
+      <VentaForm />                              
     </div>
   );
 }
